@@ -1,0 +1,30 @@
+1.5.1 -- 2016-11-21
+- [FIX] Fixed wrong instance IDs in process events. 
+
+1.5.0 -- 2016-07-08
+- [UPDATE] Enabled initialization with specific context. 
+
+1.4.4
+- [NEW] Added health check.
+
+1.4.3 -- 2016-06-16
+- [UPDATE] Fixed logging levels.
+
+1.4.2 -- 2016-04-14
+- [FIX] Fixed service call annotations.
+- [UPDATE] Updated logging.
+
+1.4.1 -- 2016-03-29
+- [NEW] Fixed rootProcessId in call activity process events. 
+
+1.4.0 -- 2016-03-03
+- [NEW] Added parent information to process instance responses.
+
+1.3.1 -- 2016-02-01
+- [FIX] Fixed admin console path.
+
+1.2.0 -- 2015-12-17
+- [NEW] Added admin page for process testing. Call "/admin/index.html" for details. Requires additional configuration of eventbus bridge (see config.json).
+
+1.1.0 -- 2015-12-14
+- [NEW] Added id of the root process to process events.

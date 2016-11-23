@@ -1,0 +1,922 @@
+---
+swagger: '2.0'
+info:
+  title: APPsist Prozess-Koordinationsinstanz
+  version: 0.1.0
+  description: |
+    Die Prozess-Koordinationsinstanz erlaubt das verwalten von Prozessen und Prozess-Instanzen über HTTP-Requests.
+  contact:
+    name: Simon Schwantzer
+    email: simon.schwantzer@im-c.de
+schemes:
+  - http
+host: demo.appsist.research.im-c.de
+basePath: /services/pki
+paths:
+  /processes:
+    get:
+      description: Liefert die Liste aller Prozesse in Form einer Liste von IDs.
+      produces: [application/json]
+      responses:
+        200:
+          description: Liste von IDs der Prozess-Definitionen.
+          schema:
+            type: object
+            properties:
+              processDefinitions:
+                type: array
+                items:
+                  type: string
+    put:
+      description: Lädt alle Prozesse einer BPMN-Definition hoch. Existierende Prozesse mit gleichen IDs werden überschrieben.
+      parameters:
+      - name: definition
+        in: body
+        description: XML einer BPMN-Prozessdefinition.
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Die BPMN-Definition wurde erfolgreich verarbeitet.
+        400:
+          description: Die BPMN-Definition konnte nicht verarbeitet werden.
+  /processes/{id}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    get:
+      description: Liefert die Prozessdefinition mit der angegebenen ID zurück.
+      produces: [application/json]
+      responses:
+        200:
+          description: Prozessdefinition
+          schema:
+            $ref: '#/definitions/processDefinition'
+        404:
+          description: Es ist keine Prozessdefinition mit der angegebenen ID registriert.
+    put:
+      description: Legt eine neue Prozessdefinition an oder aktualisiert eine existierende.
+      parameters:
+      - name: definition
+        in: body
+        description: XML einer BPMN-Prozessdefinition.
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Der BPMN-Prozess wurde erfolgreich importiert.
+          schema:
+            $ref: '#/definitions/processDefinition'
+        400:
+          description: Der BPMN-Prozess konnte nicht verarbeitet werden.
+    delete:
+      description: Löscht eine Prozessdefinition.
+      responses:
+        200:
+          description: Die Prozessdefinition wurde erfolgreich entfernt.
+        404:
+          description: Es ist keine Prozessdefinition mit der angegebenen ID registriert.
+  /processes/{id}/elements:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    get:
+      description: Liefert eine Liste der IDS aller Elemente des Prozesses.
+      responses:
+        200:
+          description: Liste der IDs aller Prozesselemente.
+          schema:
+            type: object
+            properties:
+              processId:
+                description: ID der Prozessdefintion
+                type: string
+              processElements:
+                description: Liste von IDs der Prozess-Elemente.
+                type: array
+                items:
+                  type: string
+        404:
+          description: Es ist keine Prozessdefinition mit der angegebenen ID registriert.
+  /processes/{id}/elements/{elementId}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: elementId
+      in: path
+      description: ID des addressierten Prozesselements,.
+      required: true
+      type: string
+    get:
+      description: Liefert ein bestimmtes Element des Prozesses.
+      responses:
+        200:
+          description: Prozess-Element
+          schema:
+            $ref: '#/definitions/processElement'
+  /processes/{id}/events:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert alle an den Prozess bzw. das Element annotierten Ereignisse zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Liste von Ereignissen.
+          schema:
+            type: object
+            required:
+            - processId
+            - events
+            properties:
+              processId:
+                description: ID des addressierten Prozesses.
+                type: string
+              elementId:
+                description: ID des addressierten Elements. Optional.
+                type: string
+              events:
+                description: Liste der Ereignisse.
+                type: array
+                items:
+                  $ref: '#/definitions/appsistEvent'
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+    put:
+      description: Registriert ein Ereignis, welches im Rahmen der Prozessausführung geworfen werden soll.
+      parameters:
+      - name: event
+        description: Ereignis
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/appsistEvent'
+      responses:
+        200:
+          description: Das Ereignis wurde erfolgreich registriert.
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+  /processes/{id}/events/{index}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: index
+      in: path
+      description: Index des addressierten Ereignisses.
+      required: true
+      type: integer
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert das Ereignis für den angegebenen Index zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Ereignis mit dem angegebenen Index.
+          schema:
+            $ref: '#/definitions/appsistEvent'
+        404:
+          description: Es existiert kein Ereignis mit dem angegebenen Index.
+    delete:
+      description: Löscht das Ereignis unter dem angegebenen Index.
+      responses:
+        200:
+          description: Das Ereignis wurde erfolgreich gelöscht.
+        404:
+          description: Es existiert kein Ereignis mit dem angegebenen Index.
+  /processes/{id}/instances:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    get:
+      description: Liefert die IDs aller Instanzen der angegebenen Prozessdefinition zurück.
+      parameters:
+      - name: isRunning
+        in: query
+        description: Wenn <code>false</code> werden alle Instanzen berücksichtigt, andernfalls nur solche, welche noch aktiv sind.
+        required: false
+        type: boolean
+      responses:
+        200:
+          description: Liste von IDs der Prozess-Instanzen.
+          schema:
+            type: object
+            properties:
+              processId:
+                description: ID der Prozessdefinition.
+                type: string
+              processInstances:
+                type: array
+                items:
+                  type: string
+  /processes/{id}/instantiate:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: userId
+      in: query
+      description: ID des Benutzers, in dessen Auftrag der Prozess instanziiert wird.
+      required: false
+      type: string
+    - name: sid
+      in: query
+      description: ID einer Benutzersitzung, in dessen Kontext der Prozess instanziiert wird.
+      required: false
+      type: string
+    post:
+      description: Instanziiert den ausgewählten Prozess.
+      responses:
+        200:
+          description: Neue Prozessinstanz.
+          schema:
+            $ref: '#/definitions/processInstance'
+        404:
+          description: Es existiert kein Prozess mit der angegebenen ID.
+  /processes/{id}/localData:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert alle an den Prozess bzw. das Element annotierten Daten zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Map von Schlüsseln und Werten.
+          schema:
+            type: object
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+    put:
+      description: Hinterlegt bzw. ändert ein Datum bzw. mehrere Daten unter dem/den angegeben Schlüssel(n).
+      parameters:
+      - name: input
+        description: JSON-Objekt mit den neuen Daten.
+        in: body
+        required: true
+        schema:
+          type: object
+      responses:
+        200:
+          description: Die Daten wurden erfolgreich hinterlegt.
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+  /processes/{id}/localData/{key}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: key
+      in: path
+      description: Schlüssel des addressierten Datums
+      required: true
+      type: string
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert das Datem für den angegebenen Schlüssel zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Datum in der entsprechenden Form (String, Number, Boolean, JSON-Objekt, JSON-Array).
+        404:
+          description: Für die angebene Kombination aus Prozess-ID, Element-ID und Schlüssel existiert kein Eintrag.
+    delete:
+      description: Löscht das Datum unter dem angegebenen Schlüssel.
+      responses:
+        200:
+          description: Das Datum wurde erfolgreich gelöscht.
+        404:
+          description: Für die angebene Kombination aus Prozess-ID, Element-ID und Schlüssel existiert kein Eintrag.
+  /processes/{id}/serviceCalls:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert alle an den Prozess bzw. das Element annotierten Dienstaufrufe zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Liste von Dienstaufrufen.
+          schema:
+            type: object
+            required:
+            - processId
+            - serviceCalls
+            properties:
+              processId:
+                description: ID des addressierten Prozesses.
+                type: string
+              elementId:
+                description: ID des addressierten Elements. Optional.
+                type: string
+              serviceCalls:
+                description: Liste der Dienstaufrufe.
+                type: array
+                items:
+                  $ref: '#/definitions/appsistServiceCall'
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+    put:
+      description: Registriert einen Dienstaufruf, welches im Rahmen der Prozessausführung erfolgen soll.
+      parameters:
+      - name: serviceCall
+        description: Dienstaufruf.
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/appsistServiceCall'
+      responses:
+        200:
+          description: Der Dienstaufruf wurde erfolgreich registriert.
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+  /processes/{id}/serviceCalls/{index}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: index
+      in: path
+      description: Index des addressierten Dienstaufrufs.
+      required: true
+      type: integer
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert den Dienstaufruf für den angegebenen Index zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Dienstaufruf mit dem angegebenen Index.
+          schema:
+            $ref: '#/definitions/appsistServiceCall'
+        404:
+          description: Es existiert kein Dienstaufruf mit dem angegebenen Index.
+    delete:
+      description: Löscht den Dienstaufruf mit dem angegebenen Index.
+      responses:
+        200:
+          description: Der Dienstaufruf wurde erfolgreich gelöscht.
+        404:
+          description: Es existiert kein Dienstaufruf mit dem angegebenen Index.
+  /processes/{id}/triggers:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert alle an den Prozess bzw. das Element annotierten Trigger zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Liste von Triggern.
+          schema:
+            type: object
+            required:
+            - processId
+            - triggers
+            properties:
+              processId:
+                description: ID des addressierten Prozesses.
+                type: string
+              elementId:
+                description: ID des addressierten Elements. Optional.
+                type: string
+              triggers:
+                description: Liste der Trigger.
+                type: array
+                items:
+                  $ref: '#/definitions/appsistTrigger'
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+    put:
+      description: Registriert einen Trigger, welcher während der Prozessverlausführung verarbeitet werden soll.
+      parameters:
+      - name: trigger
+        description: Trigger.
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/appsistTrigger'
+      responses:
+        200:
+          description: Der Trigger wurde erfolgreich registriert.
+        404:
+          description: Ein Prozess oder Element mit der angegebenen ID existiert nicht.
+  /processes/{id}/triggers/{index}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    - name: index
+      in: path
+      description: Index des addressierten Triggers.
+      required: true
+      type: integer
+    - name: elementId
+      in: query
+      description: ID des addressierten Prozess-Elements. Ist kein Element angegeben, wird die Prozessdefinition addressiert.
+      required: false
+      type: string
+    get:
+      description: Liefert den Trigger für den angegebenen Index zurück.
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Trigger mit dem angegebenen Index.
+          schema:
+            $ref: '#/definitions/appsistTrigger'
+        404:
+          description: Es existiert kein Trigger mit dem angegebenen Index.
+    delete:
+      description: Löscht den Trigger mit dem angegebenen Index.
+      responses:
+        200:
+          description: Der Trigger wurde erfolgreich gelöscht.
+        404:
+          description: Es existiert kein Trigger mit dem angegebenen Index.
+  /processes/{id}/xml:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessdefinition.
+      required: true
+      type: string
+    get:
+      description: Liefert die XML-Spezifikation des Prozesses zurück.
+      produces:
+      - application/xml
+      responses:
+        200:
+          description: XML-Repräsentation der Prozessdefinition.
+        404:
+          description: Es existiert keine Prozessdefinition mit der angegebenen ID.
+  /instances:
+    get:
+      description: Liefert die Liste aller aktiven Prozessinstanzen in Form einer Liste von IDs. Die Liste lässt sich über Parameter filtern.
+      parameters:
+      - name: userId
+        in: query
+        description: ID des Benutzers welcher den Prozess instanziiert hat.
+        required: false
+        type: string
+      - name: processId
+        in: query
+        description: ID des Prozesses, welcher instanziiert wurde.
+        required: false
+        type: string
+      responses:
+        200:
+          description: Liste von IDs der Prozessinstanzen
+          schema:
+            type: object
+            required:
+            - processInstances
+            properties:
+              processInstances:
+                description: Liste von IDs.
+                type: array
+                items:
+                  type: string
+  /instances/{id}:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    get:
+      description: Liefert die Prozessinstanz mit der angegebenen ID zurück.
+      responses:
+        200:
+          description: Prozessinstanz mit der angegebenen ID.
+          schema:
+            $ref: '#/definitions/processInstance'
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+  /instances/{id}/currentElement:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    get:
+      description: Liefert das aktuell aktive Element der Prozessinstanz.
+      responses:
+        200:
+          description: Derzeit aktives Prozesselement.
+          schema:
+            $ref: '#/definitions/processElementInstance'
+        400:
+          description: Die Prozessinstanz ist nicht mehr aktiv.
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+  /instances/{id}/history:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    get:
+      description: Liefert den bisherigen Prozessverlauf zurück.
+      responses:
+        200:
+          description: Derzeit aktives Prozesselement.
+          schema:
+            type: object
+            required:
+            - processId
+            - processInstanceId
+            - history
+            properties:
+              processId:
+                description: ID der Prozessdefinition.
+                type: string
+              processInstanceId:
+                description: ID der Prozessinstanz.
+                type: string
+              history:
+                description: Chronologisch invers geordnete Liste von Prozesselement-Instanzen.
+                type: array
+                items:
+                  $ref: '#/definitions/processElementInstance'
+        400:
+          description: Die Prozessinstanz ist nicht mehr aktiv.
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+  /instances/{id}/next:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    post:
+      description: Schließt den aktuellen Prozessschritt ab und geht über zum nächsten. Ist der Schritt abgeschlossen, wird das aktuelle Element zurückgeliefert.
+      parameters:
+      - name: elementId
+        description: ID des Elements, welches als nächstes angesprungen werden soll. Nur notwendig, wenn der Prozessfluss nicht eindeutig ist (Gateway).
+        in: query
+        required: false
+        type: string
+      responses:
+        200:
+          description: Instanz des unmittelbar nachfolgenden Prozesselements, welches in der Prozessauführung aktiv wurde.
+          schema:
+            $ref: '#/definitions/processElementInstance'
+        400:
+          description: Die Prozessinstanz ist nicht mehr aktiv oder der Prozessverlauf ist nicht eindeutig.
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+  /instances/{id}/previous:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    post:
+      description: Geht zurück zum zuletzt ausgeführten Prozessschritt und liefert diesen danach zurück.
+      responses:
+        200:
+          description: Instanz des Prozesselements, welches in der Prozessauführung aktiv wurde.
+          schema:
+            $ref: '#/definitions/processElementInstance'
+        400:
+          description: Die Prozessinstanz ist nicht mehr aktiv oder des gibt keinen vorherigen Prozessschritt.
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+  /instances/{id}/terminate:
+    parameters:
+    - name: id
+      in: path
+      description: ID der addressierten Prozessinstanz.
+      required: true
+      type: string
+    post:
+      description: Terminiert die Prozessinstanz.
+      responses:
+        200:
+          description: Die Instanz wurde erfolgreich terminiert.
+        400:
+          description: Die Prozessinstanz ist zum Zeitpunkt der Anfrage bereits terminiert.
+        404:
+          description: Es existiert keine Prozessinstanz mit der angegebenen ID.
+
+definitions:
+  processDefinition:
+    description:
+      Metadaten eines Assistenzprozesses.
+    type: object
+    required: 
+    - id
+    - 'type'
+    - startElement
+    properties:
+      id:
+        description: ID des Prozesses.
+        type: string
+      'type':
+        description: Zugrundeliegende Spezifikation des Prozesses
+        type: string
+        enum:
+        - bpmn
+        - other
+      label:
+        description: Menschenlesbarer Name für den Prozess.
+        type: string
+      'description':
+        description: Beschreibung für den Prozess.
+        type: string
+      startElement:
+        description: ID des Start-Elements des Prozesses.
+        type: string
+      localData:
+        description: Daten welche bei der gesamten Prozessausführung zur Verfügung stehen.
+        type: object
+      triggers:
+        description: Trigger welche die Instanziierung des Prozesses anstoßen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistTrigger'
+      events:
+        description: Ereignisse welche während der Ausführung des Prozesses generiert werden sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistEvent'
+      serviceCalls:
+        description: Dienstaufrufe welche während der Ausführung des Prozesses erfolgen sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistServiceCall'
+  processElement:
+    description: Definition eines Prozesselements.
+    type: object
+    required:
+    - id
+    - type
+    properties:
+      id:
+        description: ID des Prozesselements. Eindeuting innerhalb der Prozessdefinition.
+        type: string
+      label:
+        description: Menschenlesbarer Name für das Element.
+        type: string
+      type:
+        description: Typ des Prozesselements. [userTask,manualTask,serviceTask,callActivity,startEvent,endEvent,exclusiveGateway]
+        type: string
+        enum:
+        - userTask
+        - manualTask
+        - serviceTask
+        - callActivity
+        - startEvent
+        - endEvent
+        - exclusiveGateway
+      localData:
+        description: Daten welche bei der Ausführung des Prozesselements zur Verfügung stehen.
+        type: object
+      triggers:
+        description: Trigger welche den Abschluss des Elements signalisieren.
+        type: array
+        items:
+          $ref: '#/definitions/appsistTrigger'
+      events:
+        description: Ereignisse welche während der Ausführung des Elements generiert werden sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistEvent'
+      serviceCalls:
+        description: Dienstaufrufe welche während der Ausführung des Elements erfolgen sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistServiceCall'
+  processElementInstance:
+    description: Definition eines Prozesselements während der Ausführung.
+    type: object
+    required:
+    - id
+    - type
+    properties:
+      id:
+        description: ID des Prozesselements. Eindeuting innerhalb der Prozessdefinition.
+        type: string
+      label:
+        description: Menschenlesbarer Name für das Element.
+        type: string
+      type:
+        description: Typ des Prozesselements. [userTask,manualTask,serviceTask,callActivity,startEvent,endEvent,exclusiveGateway]
+        type: string
+        enum:
+        - userTask
+        - manualTask
+        - serviceTask
+        - callActivity
+        - startEvent
+        - endEvent
+        - exclusiveGateway
+      localData:
+        description: Daten welche bei der Ausführung des Prozesselements zur Verfügung stehen.
+        type: object
+      triggers:
+        description: Trigger welche den Abschluss des Elements signalisieren.
+        type: array
+        items:
+          $ref: '#/definitions/appsistTrigger'
+      events:
+        description: Ereignisse welche während der Ausführung des Elements generiert werden sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistEvent'
+      serviceCalls:
+        description: Dienstaufrufe welche während der Ausführung des Elements erfolgen sollen.
+        type: array
+        items:
+          $ref: '#/definitions/appsistServiceCall'
+      previousElement:
+        description: ID des Elements, welches im Prozess auf dieses Element verweist.
+        type: string
+      nextElements:
+        description: IDs aller Elemente, auf welche dieses Elemente verweist.
+        type: array
+        items:
+          type: string
+      executionInfo:
+        description: Laufzeitinformationen zum Element, welche nur bei der Prozessausführung zur Verfügung stehen.
+        type: object
+        properties:
+          start:
+            description: Zeitpunkt zu dem das Element aktiv wurde (ISO 8601).
+            type: string
+          end:
+            description: Zeitpunkt zu dem das Element abgeschlossen wurde (ISO 8601).
+            type: string
+          trigger:
+            description: Ereignis welches den Abschluss des Elements ausgelöst hat.
+            schema:
+              $ref: '#/definitions/appsistTrigger'
+  processInstance:
+    description: Instanz eines Prozesses.
+    type: object
+    required:
+    - id
+    - processId
+    - isRunning
+    properties:
+      id:
+        description: Eindeutige ID der Prozessinstanz.
+        type: string
+      processId:
+        description: ID der zugrunde liegenden Prozessdefinition.
+        type: string
+      isRunning:
+        description: Gibt an, ob die Instanz noch aktiv oder bereits terminiert ist.
+        type: boolean
+      userId:
+        description: ID des Benutzers in dessen Auftrag die Instanz instanziiert wurde.
+        type: string
+      context:
+        description: Laufzeitdaten der Instanz.
+        type: object
+  appsistEvent:
+    description: Ereignis welches während der Prozessausführung geworfen werden soll.
+    type: object
+    required:
+    - eventId
+    - 'type'
+    properties:
+      eventId:
+        description: ID des Ereignismodells
+        type: string
+      'type':
+        description: Legt fest ob das Ereignis beim Erreichen oder Verlassen des Elements/Prozesses erfolgen soll. 
+        type: string
+        default: onStart
+        enum:
+        - onStart
+        - onEnd
+      properties:
+        type: object
+        description: Map von Schlüssel und Referenzen (String, Objekt, Array)
+  appsistServiceCall:
+    description: Dienstaufruf welcher während der Prozessausführung erfolgen soll.
+    type: object
+    required:
+    - 'type'
+    - service
+    - method
+    properties:
+      'type':
+        description: Legt den Zeitpunkt fest, wann der Dienstaufruf erfolgen soll - beim Erreichen des Elements, beim Verlassen, oder beim Eintreffen eines Events. [onStart, onEnd, onTrigger]
+        type: string
+        default: onStart
+        enum:
+        - onStart
+        - onEnd
+        - onTrigger
+      service:
+        description: ID des Dienstes, der aufgerufen werden soll.
+        type: string
+      method:
+        description: ID der Methode des Dienstes, die aufgerufen werden soll.
+        type: string
+      inputMapping:
+        description: Map von Schlüsseln und Referenzen auf lokale Variablen um Eingabeparameter für den Dienstaufruf zuzuordnen.
+        type: object
+      outputMapping:
+        description: Map von Schlüsseln und Referenzen auf lokale Variablen um Rückgabewerte in dem Prozesskontext zuzuordnen.
+        type: object
+      outputReference:
+        description: Name einer einzelnen Variable welcher die Rückgabe zugewiesen werden soll.
+        type: string
+      trigger:
+        $ref: '#/definitions/appsistTrigger'
+  appsistTrigger:
+    description: Trigger für ein Prozesse, Prozess-Elemente und Dienstaufrufe.
+    type: object
+    required:
+    - eventId
+    properties:
+      eventId:
+        description: ID des Ereignismodells
+        type: string
+      references:
+        description: Map von Schlüssel und Referenzen (String, Objekt, Array)
+        type: object

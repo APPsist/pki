@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>APPsist Process Coordination Service</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="js/sockjs-0.3.4.min.js"></script>
+<script type="text/javascript" src="js/vertxbus-2.1.js"></script>
+<script type="text/javascript" src="js/handlebars-4.0.5.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	PKI.init();
+});
+</script>
+<script id="process-instance-template" type="text/x-handlebars-template">
+<div class="instance" id="instance-{{instance.id}}">
+	<div>Process ID: {{process.id}}</div>
+	<div>Instance ID: {{instance.id}}</div>
+	<div>Root Process: {{rootProcessId}}</div>
+	<button onclick="PKI.cancel('{{instance.id}}');">Cancel Execution</button>
+	<h2>History</h2>
+	<div id="history-{{instance.id}}">
+	</div>
+</div>
+</script>
+<script id="process-step-task-template" type="text/x-handlebars-template">
+<div>
+	<span>{{title}} ({{elementId}})</span>
+    {{#if next}}
+	<button onclick="PKI.next('{{instanceId}}');">Next</button>
+	{{/if}}
+</div>
+</script>
+<script id="process-step-request-template" type="text/x-handlebars-template">
+<div>
+	<span>{{message}}</span>
+	{{#each options}}
+	<button onclick="PKI.next('{{../instanceId}}', '{{this.target}}');">{{this.display}}</button>
+	{{/each}}
+</div>
+</script>
+<script id="process-step-activity-template" type="text/x-handlebars-template">
+<div>
+	<span>{{activity.title}} ({{elementId}}) --&gt; {{activity.processId}}</span>
+	<button onclick="PKI.confirm('{{instanceId}}');">Confirm</button>
+	<button onclick="PKI.next('{{instanceId}}');">Next</button>
+</div>
+</script>
+</head>
+<script id="process-start-template" type="text/x-handlebars-template">
+<div>
+	Process started.
+</div>
+</script>
+<script id="process-end-template" type="text/x-handlebars-template">
+<div>
+	Process completed.
+	<button onclick="PKI.close('{{instanceId}}');">Close</button>
+</div>
+</script>
+<script id="process-error-template" type="text/x-handlebars-template">
+<div>
+	Process error: {{error.message}} [{{error.code}}]
+	<button onclick="PKI.close('{{instanceId}}');">Close</button>
+</div>
+</script>
+<script id="process-cancelled-template" type="text/x-handlebars-template">
+<div>
+	Process cancelled.
+	<button onclick="PKI.close('{{instanceId}}');">Close</button>
+</div>
+</script>
+<script id="process-terminated-template" type="text/x-handlebars-template">
+<div>
+	Process terminated.
+	<button onclick="PKI.close('{{instanceId}}');">Close</button>
+</div>
+</script>
+</head>
+
+<body>
+<div id="error" class="page">
+	<h1>ERROR</h1>
+	<div class="body"></div>
+</div>
+<div id="initialize" class="page active">
+	<div>Initializing connection ...</div>
+</div>
+<div id="main" class="page">
+	<h1>Process Overview</h1>
+	<form name="process-selection" id="processSelectForm">
+		<select name="processId" id="processSelect">
+		</select>
+		<input type="button" onclick="PKI.selectProcess();" value="Instantiate">
+	</form>
+</div>
+<div id="process" class="page">
+	<h1>Process Execution</h1>
+	<div id="processTabs">
+		
+	</div>
+	<div id="processLogs">
+	
+	</div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+{
+	"id" : "d79d2ea0-248b-4a7b-93ef-fd2ebda7b78f",
+	"modelId" : "processEvent:processComplete",
+	"session" : "19ee6e0e-a62b-4b0f-b54a-e90d8a1b2770",
+	"created" : "2015-03-23T16:45:38+01:00",
+	"payload" : {
+		"processInstanceId" : "85e82581-f76a-46e4-b8b6-c29d4649d1e9",
+		"userId" : "sascha.support"
+	}
+}

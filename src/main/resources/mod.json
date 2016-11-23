@@ -1,0 +1,13 @@
+{
+	"main" : "de.appsist.service.pki.MainVerticle",
+
+	"description" : "This service handles the instantiation and execution of support processes.",
+	"licenses" : ["The Apache Software License Version 2.0"],
+	"author" : "Simon Schwantzer",
+
+	"developers": ["Michael Schmidt"],
+	"keywords": ["appsist", "process", "pki", "bpmn"],
+	"homepage": "http://www.appsist.de/",
+
+	"auto-redeploy": true
+}

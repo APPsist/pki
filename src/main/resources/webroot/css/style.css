@@ -1,0 +1,31 @@
+body {
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+div.page {
+	display: none;
+	border-radius: 5px;
+	background-color: #d5eaff;
+	padding: 10px; 
+}
+
+div.instance {
+	display: none;
+	border-radius: 5px;
+	background-color: #ffffff;
+	padding: 5px;
+}
+
+div.active {
+	display : block;
+}
+
+#error {
+	background-color: #ffe8e8;
+}
+
+#processSelector > div {
+	display: inline-block;
+	margin-right: 5px;
+}
