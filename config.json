@@ -1,0 +1,15 @@
+{
+  "webserver":{
+    "port":8087,
+    "statics":"www",
+    "basePath":"/services/pki"
+  },
+  "services":{
+    "host":"localhost",
+    "port":8080,
+    "secure":false,
+    "baseUrl":"/services"
+  },
+  "processEngine":"simple",
+  "processDefinitionPath":"<FILE_SYSTEM_PATH>"
+}
